@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "elastic-stig-audit"
+version = "1.0.0"
+description = "CIS Elasticsearch Container Security Benchmark — automated audit tool for containerized Elasticsearch"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+keywords = ["elasticsearch", "security", "audit", "cis", "benchmark", "compliance", "stig"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = []  # Zero third-party runtime dependencies
+
+[project.scripts]
+elastic-stig-audit = "audit:main"
+
+[project.urls]
+Homepage = "https://github.com/audit-forge/elastic-stig-audit"
+Repository = "https://github.com/audit-forge/elastic-stig-audit"
+Issues = "https://github.com/audit-forge/elastic-stig-audit/issues"
+
+[tool.setuptools.packages.find]
+include = ["checks*", "mappings*", "output*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

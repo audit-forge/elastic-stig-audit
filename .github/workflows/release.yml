@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Run tests
+        run: python -m pytest test/ -v
+
+      - name: Build distribution
+        run: python -m build --wheel --sdist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "elastic-stig-audit ${{ github.ref_name }}"
+          body: |
+            ## elastic-stig-audit ${{ github.ref_name }}
+
+            CIS Elasticsearch Container Security Benchmark — Automated Audit Tool
+
+            ### Installation
+            ```bash
+            pip install elastic-stig-audit==${{ github.ref_name }}
+            # or
+            git clone https://github.com/audit-forge/elastic-stig-audit.git
+            ```
+
+            ### Quick Start
+            ```bash
+            python audit.py --mode docker --container elasticsearch --sarif results.sarif
+            ```
+
+            See [README.md](https://github.com/audit-forge/elastic-stig-audit#readme) for full documentation.
+          files: dist/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

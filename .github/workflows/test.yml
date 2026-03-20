@@ -1,0 +1,105 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dev dependencies
+        run: pip install pytest flake8 mypy
+
+      - name: Run linter
+        run: |
+          flake8 audit.py runner.py checks/ mappings/ output/ \
+            --max-line-length=120 \
+            --extend-ignore=E501,W503
+
+      - name: Run tests
+        run: python -m pytest test/ -v
+
+      - name: Type check
+        run: |
+          mypy audit.py runner.py checks/ mappings/ output/ \
+            --ignore-missing-imports \
+            --no-error-summary \
+            || true  # non-blocking until fully annotated
+
+  integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -s http://localhost:9200/ > /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Wait for Elasticsearch
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:9200/ > /dev/null && echo "ES ready" && break
+            echo "Waiting... ($i)"
+            sleep 3
+          done
+
+      - name: Run audit against live Elasticsearch
+        run: |
+          python audit.py \
+            --mode direct \
+            --host localhost \
+            --port 9200 \
+            --skip-cve \
+            --sarif results.sarif \
+            --json results.json \
+            --csv results.csv \
+            --fail-on none
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: elasticsearch-audit-results
+          path: |
+            results.sarif
+            results.json
+            results.csv
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: elastic-stig-audit
