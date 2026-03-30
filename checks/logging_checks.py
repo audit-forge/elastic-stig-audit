@@ -9,6 +9,16 @@ Controls:
 from .base import BaseChecker, CheckResult, Severity, Status
 
 
+def _normalize_events(value) -> set[str]:
+    if not value:
+        return set()
+    if isinstance(value, list):
+        return {str(e).strip().lower() for e in value if str(e).strip()}
+    if isinstance(value, str):
+        return {e.strip().lower() for e in value.split(",") if e.strip()}
+    return {str(value).strip().lower()} if str(value).strip() else set()
+
+
 class ElasticsearchLoggingChecker(BaseChecker):
     def run(self) -> list[CheckResult]:
         node_settings = self.runner.get_node_settings()
@@ -104,12 +114,14 @@ class ElasticsearchLoggingChecker(BaseChecker):
             "connection_denied",
         }
 
-        if not audit_include:
+        configured = _normalize_events(audit_include)
+        excluded = _normalize_events(audit_exclude)
+
+        if not configured:
             # Default events in ES include auth failures but not successes
             status = Status.WARN
             actual = "audit events not explicitly configured (using defaults — auth_failure + access_denied)"
         else:
-            configured = {e.strip() for e in audit_include.split(",")}
             missing = required_events - configured
             if missing:
                 status = Status.WARN
@@ -119,8 +131,7 @@ class ElasticsearchLoggingChecker(BaseChecker):
                 actual = f"configured events include all required: {sorted(configured & required_events)}"
 
         # Check if critical events are excluded
-        if audit_exclude:
-            excluded = {e.strip() for e in audit_exclude.split(",")}
+        if excluded:
             critical_excluded = required_events & excluded
             if critical_excluded:
                 status = Status.FAIL

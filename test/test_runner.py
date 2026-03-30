@@ -80,6 +80,13 @@ def test_exec_command_not_found():
     assert r.last_error is not None
 
 
+def test_security_response_error_payload_sanitized():
+    r = ElasticsearchRunner(mode="direct")
+    assert r._sanitize_security_response({"error": "boom", "status": 405}) == {}
+    assert r._sanitize_security_response({"elastic": {"enabled": True}}) == {"elastic": {"enabled": True}}
+
+
+
 def test_snapshot_returns_dict():
     r = ElasticsearchRunner(mode="direct")
     # snapshot will fail to connect but should return a dict

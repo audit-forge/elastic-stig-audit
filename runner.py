@@ -137,17 +137,25 @@ class ElasticsearchRunner:
     def get_cluster_health(self) -> dict:
         return self.api_get("/_cluster/health") or {}
 
+    def _sanitize_security_response(self, data: Optional[dict]) -> dict:
+        """Return {} for security API error payloads so checks don't mis-handle them as objects."""
+        if not isinstance(data, dict):
+            return {}
+        if "error" in data and "status" in data:
+            return {}
+        return data
+
     def get_users(self) -> dict:
-        """Return security users dict. Returns {} if security not enabled."""
-        return self.api_get("/_security/user") or {}
+        """Return security users dict. Returns {} if security not enabled or API errors."""
+        return self._sanitize_security_response(self.api_get("/_security/user"))
 
     def get_roles(self) -> dict:
-        """Return security roles dict."""
-        return self.api_get("/_security/role") or {}
+        """Return security roles dict. Returns {} if security not enabled or API errors."""
+        return self._sanitize_security_response(self.api_get("/_security/role"))
 
     def get_privileges(self) -> dict:
-        """Return application privileges."""
-        return self.api_get("/_security/privilege") or {}
+        """Return application privileges. Returns {} if security not enabled or API errors."""
+        return self._sanitize_security_response(self.api_get("/_security/privilege"))
 
     def get_xpack_info(self) -> dict:
         """Return X-Pack info (license, features)."""

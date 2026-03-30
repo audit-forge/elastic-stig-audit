@@ -375,6 +375,19 @@ class TestLoggingChecker:
         log002 = next(r for r in results if r.check_id == "ES-LOG-002")
         assert log002.status == Status.WARN
 
+    def test_audit_events_list_value_passes(self):
+        checker = self._checker(cluster_settings={
+            "xpack.security.audit.logfile.events.include": [
+                "AUTHENTICATION_SUCCESS",
+                "AUTHENTICATION_FAILED",
+                "ACCESS_DENIED",
+                "CONNECTION_DENIED",
+            ],
+        })
+        results = checker.run()
+        log002 = next(r for r in results if r.check_id == "ES-LOG-002")
+        assert log002.status == Status.PASS
+
     def test_audit_events_critical_event_excluded_fails(self):
         required = "authentication_success,authentication_failed,access_denied,connection_denied"
         checker = self._checker(node_settings={
