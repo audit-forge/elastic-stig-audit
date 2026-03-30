@@ -17,7 +17,7 @@ class ElasticsearchAuthChecker(BaseChecker):
         users = self.runner.get_users()
 
         return [
-            self._check_security_enabled(node_settings, cluster_settings),
+            self._check_security_enabled(node_settings, cluster_settings, users),
             self._check_elastic_default_password(users),
             self._check_password_policy(node_settings, cluster_settings),
             self._check_api_key_service(node_settings, cluster_settings),
@@ -26,17 +26,18 @@ class ElasticsearchAuthChecker(BaseChecker):
 
     # ------------------------------------------------------------------
 
-    def _check_security_enabled(self, node_settings: dict, cluster_settings: dict) -> CheckResult:
+    def _check_security_enabled(
+        self, node_settings: dict, cluster_settings: dict, users: dict
+    ) -> CheckResult:
         """ES-AUTH-001: xpack.security.enabled must be true (or auto-configured in 8.x)."""
         # In ES 8.x security is enabled by default. In 7.x it must be explicitly set.
         security_enabled = (
             node_settings.get("xpack.security.enabled", "").lower()
             or cluster_settings.get("xpack.security.enabled", "").lower()
         )
-        # If the setting is missing entirely, check if we can reach the security API
+        # If the setting is missing entirely, infer from already-fetched users API response
         if not security_enabled:
-            # Try fetching users — if it returns data, security is on
-            users_resp = self.runner.get_users()
+            users_resp = users
             if users_resp and isinstance(users_resp, dict) and len(users_resp) > 0:
                 security_on = True
                 actual = "xpack.security.enabled=<not explicitly set, security API responding>"
@@ -197,20 +198,24 @@ class ElasticsearchAuthChecker(BaseChecker):
         if pw_length:
             try:
                 length_int = int(pw_length)
-                passes = length_int >= 12
+                if length_int >= 12:
+                    pw_status = Status.PASS
+                else:
+                    # Explicitly configured too short — definitive failure
+                    pw_status = Status.FAIL
                 actual = f"minimum_password_length={pw_length}"
             except ValueError:
-                passes = False
+                pw_status = Status.WARN
                 actual = f"minimum_password_length={pw_length} (parse error)"
         else:
-            # Default in ES is 6 — insufficient for regulated environments
-            passes = False
+            # Default in ES is 6 — insufficient, but WARN since external policy may govern
+            pw_status = Status.WARN
             actual = "minimum_password_length not configured (ES default: 6 characters)"
 
         return CheckResult(
             check_id="ES-AUTH-003",
             title="Password minimum length policy must require at least 12 characters",
-            status=Status.PASS if passes else Status.WARN,
+            status=pw_status,
             severity=Severity.MEDIUM,
             benchmark_control_id="1.3",
             cis_id="CIS-ES-1.3",

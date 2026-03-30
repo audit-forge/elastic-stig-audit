@@ -10,14 +10,17 @@ Controls:
 from .base import BaseChecker, CheckResult, Severity, Status
 
 _WEAK_CIPHERS = frozenset({
-    "TLS_RSA_WITH_RC4_128_SHA",
-    "TLS_RSA_WITH_RC4_128_MD5",
-    "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-    "TLS_RSA_WITH_NULL_SHA256",
-    "TLS_RSA_WITH_NULL_SHA",
-    "TLS_RSA_WITH_NULL_MD5",
-    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-    "TLS_RSA_WITH_AES_128_CBC_SHA",
+    "TLS_RSA_WITH_RC4_128_SHA",        # RC4 — broken
+    "TLS_RSA_WITH_RC4_128_MD5",        # RC4 — broken
+    "SSL_RSA_WITH_3DES_EDE_CBC_SHA",   # 3DES/SWEET32 — vulnerable
+    "TLS_RSA_WITH_NULL_SHA256",        # NULL encryption — no confidentiality
+    "TLS_RSA_WITH_NULL_SHA",           # NULL encryption — no confidentiality
+    "TLS_RSA_WITH_NULL_MD5",           # NULL encryption — no confidentiality
+    "TLS_RSA_WITH_AES_128_CBC_SHA",    # No forward secrecy (RSA key exchange)
+    "TLS_RSA_WITH_AES_256_CBC_SHA",    # No forward secrecy (RSA key exchange)
+    "TLS_RSA_WITH_AES_128_CBC_SHA256", # No forward secrecy (RSA key exchange)
+    # NOTE: TLS_DHE_RSA_WITH_AES_*_CBC_SHA intentionally excluded — DHE provides
+    # forward secrecy. These are "acceptable" per NIST SP 800-52 Rev 2 Table 3-5.
 })
 
 _STRONG_PROTOCOLS = frozenset({"TLSv1.2", "TLSv1.3"})

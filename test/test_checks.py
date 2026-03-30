@@ -117,13 +117,30 @@ class TestAuthChecker:
         auth003 = next(r for r in results if r.check_id == "ES-AUTH-003")
         assert auth003.status == Status.PASS
 
-    def test_password_policy_too_short(self):
+    def test_password_policy_too_short_explicit_fails(self):
+        # Explicitly configured to 6 — definitive misconfiguration, must FAIL
         checker = self._checker(cluster_settings={
             "xpack.security.authc.native.minimum_password_length": "6"
         })
         results = checker.run()
         auth003 = next(r for r in results if r.check_id == "ES-AUTH-003")
-        assert auth003.status == Status.WARN  # Short = warn, not fail
+        assert auth003.status == Status.FAIL
+
+    def test_password_policy_boundary_11_fails(self):
+        checker = self._checker(cluster_settings={
+            "xpack.security.authc.native.minimum_password_length": "11"
+        })
+        results = checker.run()
+        auth003 = next(r for r in results if r.check_id == "ES-AUTH-003")
+        assert auth003.status == Status.FAIL
+
+    def test_password_policy_boundary_12_passes(self):
+        checker = self._checker(cluster_settings={
+            "xpack.security.authc.native.minimum_password_length": "12"
+        })
+        results = checker.run()
+        auth003 = next(r for r in results if r.check_id == "ES-AUTH-003")
+        assert auth003.status == Status.PASS
 
     def test_password_policy_not_set(self):
         checker = self._checker()
@@ -339,6 +356,42 @@ class TestLoggingChecker:
         log001 = next(r for r in results if r.check_id == "ES-LOG-001")
         assert log001.status == Status.FAIL
 
+    def test_audit_events_all_required_passes(self):
+        required = "authentication_success,authentication_failed,access_denied,connection_denied"
+        checker = self._checker(node_settings={
+            "xpack.security.audit.enabled": "true",
+            "xpack.security.audit.logfile.events.include": required,
+        })
+        results = checker.run()
+        log002 = next(r for r in results if r.check_id == "ES-LOG-002")
+        assert log002.status == Status.PASS
+
+    def test_audit_events_missing_required_warns(self):
+        checker = self._checker(node_settings={
+            "xpack.security.audit.enabled": "true",
+            "xpack.security.audit.logfile.events.include": "authentication_failed",
+        })
+        results = checker.run()
+        log002 = next(r for r in results if r.check_id == "ES-LOG-002")
+        assert log002.status == Status.WARN
+
+    def test_audit_events_critical_event_excluded_fails(self):
+        required = "authentication_success,authentication_failed,access_denied,connection_denied"
+        checker = self._checker(node_settings={
+            "xpack.security.audit.enabled": "true",
+            "xpack.security.audit.logfile.events.include": required,
+            "xpack.security.audit.logfile.events.exclude": "authentication_failed",
+        })
+        results = checker.run()
+        log002 = next(r for r in results if r.check_id == "ES-LOG-002")
+        assert log002.status == Status.FAIL
+
+    def test_audit_events_not_configured_warns(self):
+        checker = self._checker()
+        results = checker.run()
+        log002 = next(r for r in results if r.check_id == "ES-LOG-002")
+        assert log002.status == Status.WARN
+
 
 # ------------------------------------------------------------------
 # Cluster checks
@@ -460,6 +513,98 @@ class TestContainerChecker:
         results = checker.run()
         cont002 = next(r for r in results if r.check_id == "ES-CONT-002")
         assert cont002.status == Status.FAIL
+
+    def test_docker_dangerous_cap_added_fails(self):
+        runner = FakeRunner()
+        runner.mode = "docker"
+        runner.container = "my-es"
+        runner.container_inspect = lambda: {
+            "Config": {"User": "1000"},
+            "HostConfig": {
+                "Privileged": False,
+                "CapAdd": ["SYS_ADMIN"],
+                "CapDrop": ["ALL"],
+                "ReadonlyRootfs": True,
+                "Memory": 8589934592,
+                "NanoCpus": 4000000000,
+                "NetworkMode": "bridge",
+                "PidMode": "",
+                "IpcMode": "private",
+            },
+        }
+        checker = ElasticsearchContainerChecker(runner)
+        results = checker.run()
+        cont003 = next(r for r in results if r.check_id == "ES-CONT-003")
+        assert cont003.status == Status.FAIL
+
+    def test_docker_no_cap_drop_all_warns(self):
+        runner = FakeRunner()
+        runner.mode = "docker"
+        runner.container = "my-es"
+        runner.container_inspect = lambda: {
+            "Config": {"User": "1000"},
+            "HostConfig": {
+                "Privileged": False,
+                "CapAdd": None,
+                "CapDrop": None,  # missing cap_drop=ALL
+                "ReadonlyRootfs": True,
+                "Memory": 8589934592,
+                "NanoCpus": 4000000000,
+                "NetworkMode": "bridge",
+                "PidMode": "",
+                "IpcMode": "private",
+            },
+        }
+        checker = ElasticsearchContainerChecker(runner)
+        results = checker.run()
+        cont003 = next(r for r in results if r.check_id == "ES-CONT-003")
+        assert cont003.status == Status.WARN
+
+    def test_docker_host_network_fails(self):
+        runner = FakeRunner()
+        runner.mode = "docker"
+        runner.container = "my-es"
+        runner.container_inspect = lambda: {
+            "Config": {"User": "1000"},
+            "HostConfig": {
+                "Privileged": False,
+                "CapAdd": None,
+                "CapDrop": ["ALL"],
+                "ReadonlyRootfs": True,
+                "Memory": 8589934592,
+                "NanoCpus": 4000000000,
+                "NetworkMode": "host",  # host networking
+                "PidMode": "",
+                "IpcMode": "private",
+            },
+        }
+        checker = ElasticsearchContainerChecker(runner)
+        results = checker.run()
+        cont006 = next(r for r in results if r.check_id == "ES-CONT-006")
+        assert cont006.status == Status.FAIL
+
+    def test_docker_host_ipc_fails(self):
+        runner = FakeRunner()
+        runner.mode = "docker"
+        runner.container = "my-es"
+        runner.container_inspect = lambda: {
+            "Config": {"User": "1000"},
+            "HostConfig": {
+                "Privileged": False,
+                "CapAdd": None,
+                "CapDrop": ["ALL"],
+                "ReadonlyRootfs": True,
+                "Memory": 8589934592,
+                "NanoCpus": 4000000000,
+                "NetworkMode": "bridge",
+                "PidMode": "",
+                "IpcMode": "host",  # host IPC
+            },
+        }
+        checker = ElasticsearchContainerChecker(runner)
+        results = checker.run()
+        cont006 = next(r for r in results if r.check_id == "ES-CONT-006")
+        assert cont006.status == Status.FAIL
 
     def test_resource_limits_both_set_pass(self):
         runner = FakeRunner()
