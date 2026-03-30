@@ -350,11 +350,6 @@ class ElasticsearchEncryptionChecker(BaseChecker):
         # Encryption at rest is achieved via:
         # 1. OS/filesystem-level encryption (dm-crypt, LUKS, AWS EBS encryption)
         # 2. Elastic Security for Elasticsearch encrypted snapshots (7.12+)
-        # We check for the encrypted snapshots setting as a proxy
-        snapshot_encryption = (
-            node_settings.get("xpack.snapshot_lifecycle.history_index_enabled", "")
-            or cluster_settings.get("snapshot.encrypted", "")
-        )
 
         # Check if path.data is configured (where data lives)
         data_path = node_settings.get("path.data", "<not set>")
