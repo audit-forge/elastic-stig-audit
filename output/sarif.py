@@ -14,6 +14,7 @@ Severity → rule defaultConfiguration.level:
   LOW / INFO      → "note"
 """
 import json
+import re
 
 SARIF_SCHEMA = "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json"
 SARIF_VERSION = "2.1.0"
@@ -37,6 +38,19 @@ _STATUS_TO_LEVEL = {
 
 def _pascal(s: str) -> str:
     return "".join(w.capitalize() for w in s.replace("-", " ").replace("_", " ").split())
+
+
+def _safe_help_uri(references) -> str | None:
+    for ref in references or []:
+        if isinstance(ref, str) and re.match(r"^https?://", ref):
+            return ref
+    return None
+
+
+def _artifact_uri(target_info: dict) -> str:
+    display = target_info.get("display_name") or "unknown"
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "_", display).strip("._") or "unknown"
+    return f"targets/{sanitized}.target"
 
 
 def _rule_from_result(r) -> dict:
@@ -69,8 +83,9 @@ def _rule_from_result(r) -> dict:
             "text": r.remediation,
             "markdown": f"**Remediation:** {r.remediation}",
         }
-    if r.references:
-        rule["helpUri"] = r.references[0]
+    help_uri = _safe_help_uri(r.references)
+    if help_uri:
+        rule["helpUri"] = help_uri
     return rule
 
 
@@ -97,7 +112,6 @@ def _result_entry(r, rule_index: int, artifact_uri: str) -> dict:
                 "physicalLocation": {
                     "artifactLocation": {
                         "uri": artifact_uri,
-                        "uriBaseId": "ES_TARGET",
                     },
                     "region": {"startLine": 1},
                 },
@@ -132,11 +146,7 @@ def build_sarif(results, target_info: dict, tool_name: str, tool_version: str) -
             seen[r.check_id] = len(rules)
             rules.append(_rule_from_result(r))
 
-    display = target_info.get("display_name", "elasticsearch://unknown")
-    known_schemes = ("http://", "https://", "docker://", "k8s://")
-    artifact_uri = (
-        display if any(display.startswith(s) for s in known_schemes) else f"elasticsearch://{display}"
-    )
+    artifact_uri = _artifact_uri(target_info)
 
     sarif_results = [_result_entry(r, seen[r.check_id], artifact_uri) for r in results]
 
@@ -151,13 +161,6 @@ def build_sarif(results, target_info: dict, tool_name: str, tool_version: str) -
                         "version": tool_version,
                         "informationUri": "https://github.com/audit-forge/elastic-stig-audit",
                         "rules": rules,
-                    }
-                },
-                "originalUriBaseIds": {
-                    "ES_TARGET": {
-                        "description": {
-                            "text": "Elasticsearch target (container, pod, or host:port) being assessed."
-                        }
                     }
                 },
                 "results": sarif_results,
