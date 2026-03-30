@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install build tools
-        run: pip install build
+      - name: Install build and test tools
+        run: pip install build pytest
 
       - name: Run tests
         run: python -m pytest test/ -v

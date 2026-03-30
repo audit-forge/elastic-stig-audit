@@ -7,7 +7,7 @@ name = "elastic-stig-audit"
 version = "1.0.0"
 description = "CIS Elasticsearch Container Security Benchmark — automated audit tool for containerized Elasticsearch"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 keywords = ["elasticsearch", "security", "audit", "cis", "benchmark", "compliance", "stig"]
 classifiers = [

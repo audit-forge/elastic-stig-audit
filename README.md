@@ -48,7 +48,7 @@ python audit.py --mode docker --container my-elasticsearch \
 
 ## Installation
 
-**Requirements:** Python 3.9+, Docker CLI or kubectl (for container modes)
+**Requirements:** Python 3.10+, Docker CLI or kubectl (for container modes)
 
 ```bash
 # No pip install required — zero dependencies

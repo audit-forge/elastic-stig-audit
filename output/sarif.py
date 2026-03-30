@@ -120,13 +120,6 @@ def _result_entry(r, rule_index: int, artifact_uri: str) -> dict:
             "mitre_d3fend": r.mitre_d3fend or [],
         },
     }
-    if r.remediation:
-        entry["fixes"] = [
-            {
-                "description": {"text": r.remediation},
-                "artifactChanges": [],
-            }
-        ]
     return entry
 
 

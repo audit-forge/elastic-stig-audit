@@ -215,10 +215,6 @@ class ElasticsearchClusterChecker(BaseChecker):
             node_settings.get("cluster.routing.allocation.awareness.attributes", "")
             or cluster_settings.get("cluster.routing.allocation.awareness.attributes", "")
         )
-        allocation_balance = (
-            node_settings.get("cluster.routing.allocation.balance.shard", "")
-            or cluster_settings.get("cluster.routing.allocation.balance.shard", "")
-        )
         # Check for disk-based allocation
         disk_threshold = (
             cluster_settings.get("cluster.routing.allocation.disk.threshold_enabled", "true")

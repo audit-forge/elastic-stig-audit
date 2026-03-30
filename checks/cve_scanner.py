@@ -5,7 +5,6 @@ locally, and produces CheckResult objects for integration into audit output.
 """
 import json
 import os
-import re
 import time
 import urllib.error
 import urllib.parse

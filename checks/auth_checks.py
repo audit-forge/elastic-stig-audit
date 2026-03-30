@@ -132,7 +132,6 @@ class ElasticsearchAuthChecker(BaseChecker):
 
         enabled = elastic_user.get("enabled", True)
         roles = elastic_user.get("roles", [])
-        is_superuser = "superuser" in roles
 
         # Heuristic: if we connected with empty/no credentials and got user data back, security may be weak
         connected_no_auth = not self.runner.username and not self.runner.password

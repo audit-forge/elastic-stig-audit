@@ -28,12 +28,12 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from runner import ElasticsearchRunner
-from checks import ALL_CHECKERS
-from mappings.frameworks import enrich_all
-from output import report
-from output.sarif import write_sarif
-from output.bundle import write_bundle
+from runner import ElasticsearchRunner  # noqa: E402
+from checks import ALL_CHECKERS  # noqa: E402
+from mappings.frameworks import enrich_all  # noqa: E402
+from output import report  # noqa: E402
+from output.sarif import write_sarif  # noqa: E402
+from output.bundle import write_bundle  # noqa: E402
 
 TOOL_NAME = "elastic-stig-audit"
 TOOL_VERSION = "1.0.0"

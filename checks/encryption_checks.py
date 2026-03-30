@@ -18,7 +18,7 @@ _WEAK_CIPHERS = frozenset({
     "TLS_RSA_WITH_NULL_MD5",           # NULL encryption — no confidentiality
     "TLS_RSA_WITH_AES_128_CBC_SHA",    # No forward secrecy (RSA key exchange)
     "TLS_RSA_WITH_AES_256_CBC_SHA",    # No forward secrecy (RSA key exchange)
-    "TLS_RSA_WITH_AES_128_CBC_SHA256", # No forward secrecy (RSA key exchange)
+    "TLS_RSA_WITH_AES_128_CBC_SHA256",  # No forward secrecy (RSA key exchange)
     # NOTE: TLS_DHE_RSA_WITH_AES_*_CBC_SHA intentionally excluded — DHE provides
     # forward secrecy. These are "acceptable" per NIST SP 800-52 Rev 2 Table 3-5.
 })
