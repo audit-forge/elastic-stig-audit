@@ -13,7 +13,7 @@ Automated security assessment for Elasticsearch instances deployed in Docker con
 - **Multi-framework mappings** — NIST 800-53, NIST 800-171, CMMC 2.0, MITRE ATT&CK, D3FEND
 - **Multiple output formats** — terminal, CSV (21 cols), JSON, SARIF 2.1.0, evidence bundle (ZIP)
 - **Three connection modes** — Docker exec, kubectl exec, direct REST API
-- **Zero dependencies** — Python 3.9+ standard library only
+- **Zero dependencies** — Python 3.10+ standard library only
 - **CI/CD ready** — SARIF output for GitHub Security tab, exit codes for pipeline gates
 
 ---

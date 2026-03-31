@@ -1,6 +1,6 @@
 # elastic-stig-audit — Current State
 
-**Last validated:** 2026-03-29
+**Last validated:** 2026-03-31
 **Python:** 3.14.3
 **pytest:** 9.0.2
 
@@ -16,13 +16,14 @@ A Python stdlib-only audit CLI for Elasticsearch deployed in Docker or Kubernete
 
 ```
 python3 -m pytest test/ -q
-89 passed in 0.14s
+94 passed in 0.14s
 ```
 
 Breakdown by file:
 - `test/test_checks.py` — 56 tests covering all 7 check categories + framework mappings
 - `test/test_cve_scanner.py` — 23 tests covering version detection, cache helpers, NVD/KEV fetch, result building (all network calls mocked)
-- `test/test_runner.py` — 11 tests covering runner initialization, curl construction, and snapshot
+- `test/test_runner.py` — 12 tests covering runner initialization, curl construction, and snapshot
+- `test/test_sarif_output.py` — 3 tests covering SARIF artifact URI sanitization and help URI validation
 
 ---
 
@@ -36,12 +37,13 @@ Breakdown by file:
 - **Evidence bundling**: ZIP archive with per-check evidence files, snapshot, SARIF
 - **All tests pass** with no network calls required (CVE scanner tests fully mocked)
 - **Framework enrichment**: all 28 check IDs have NIST 800-171, CMMC, MITRE ATT&CK/D3FEND mappings verified in tests
+- **CI integration job**: GitHub Actions runs the full audit against a live single-node Elasticsearch 8.12.0 service on every push to main
 
 ---
 
 ## What does not work / known limitations
 
-1. **No integration tests against a real Elasticsearch instance.** All tests use `FakeRunner` mocks. Unlike the pg/redis/mongo tools, there is no `test/run_fixtures.sh` or Docker Compose fixture for end-to-end validation. This is the largest gap between this tool and the others in the suite.
+1. **No local integration test fixtures.** The unit test suite uses `FakeRunner` mocks throughout; there is no `test/run_fixtures.sh` or Docker Compose fixture for local developer use. CI fills this gap with a GitHub Actions integration job (`.github/workflows/test.yml`) that runs the full audit against a live Elasticsearch 8.12.0 service on every push to main, but this is not reproducible offline.
 
 2. **CVE scanner is best-effort only.** NVD keyword search returns false positives and misses version-specific CVEs. It does not use the CPE-based NVD search, which would be more accurate. Rate limiting without an API key (6s sleep per request) makes it slow in CI.
 
@@ -84,7 +86,7 @@ This tool is **functionally complete as a v1.0 baseline** with the following cav
 
 ## v1.1 backlog
 
-- Integration test fixtures (`test/run_fixtures.sh` + Docker Compose)
+- Local integration test fixtures (`test/run_fixtures.sh` + Docker Compose for offline developer use)
 - `action.auto_create_index` check (ES-AUTHZ-005)
 - `xpack.security.enrollment.enabled` check (ES-AUTH-006)
 - Snapshot repository security check (ES-AUTH-007)
