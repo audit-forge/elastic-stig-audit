@@ -31,7 +31,7 @@ Breakdown by file:
 
 - **28 automated controls** across 7 domains (auth, encryption, network, authz, logging, cluster, container)
 - **3 connection modes**: `--mode docker`, `--mode kubectl`, `--mode direct`
-- **4 output formats**: terminal (default), `--output json`, `--output sarif`, `--output bundle`
+- **4 output formats**: terminal (default), `--json FILE`, `--sarif FILE`, `--csv FILE`, `--bundle FILE`
 - **CSV export** with 21 compliance columns including NIST 800-53, NIST 800-171, CMMC 2.0, MITRE ATT&CK/D3FEND
 - **CVE/KEV scanning** via NVD API v2 + CISA KEV catalog with 24-hour cache
 - **Evidence bundling**: ZIP archive with per-check evidence files, snapshot, SARIF
@@ -68,7 +68,7 @@ Breakdown by file:
 - Zero external dependencies (stdlib only)
 - No known injection vulnerabilities; subprocess calls use list args (not shell=True)
 - No hardcoded credentials
-- GitHub Actions CI runs tests on Python 3.9–3.12 matrix
+- GitHub Actions CI runs tests on Python 3.10–3.12 matrix
 
 ---
 

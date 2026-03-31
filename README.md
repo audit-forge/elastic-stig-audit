@@ -26,18 +26,18 @@ git clone https://github.com/audit-forge/elastic-stig-audit.git
 cd elastic-stig-audit
 
 # Audit a running Docker container
-python audit.py --mode docker --container my-elasticsearch
+python3 audit.py --mode docker --container my-elasticsearch
 
 # Audit a Kubernetes pod
-python audit.py --mode kubectl --pod es-0 --namespace elastic
+python3 audit.py --mode kubectl --pod es-0 --namespace elastic
 
 # Audit via direct REST API (HTTPS)
-python audit.py --mode direct \
+python3 audit.py --mode direct \
   --host 10.0.0.5 --port 9200 \
   --username elastic --password mypassword --scheme https
 
 # Full output suite
-python audit.py --mode docker --container my-elasticsearch \
+python3 audit.py --mode docker --container my-elasticsearch \
   --sarif results.sarif \
   --json results.json \
   --csv results.csv \
@@ -54,7 +54,7 @@ python audit.py --mode docker --container my-elasticsearch \
 # No pip install required — zero dependencies
 git clone https://github.com/audit-forge/elastic-stig-audit.git
 cd elastic-stig-audit
-python audit.py --help
+python3 audit.py --help
 
 # Optional: install as CLI tool
 pip install -e .
@@ -67,19 +67,19 @@ elastic-stig-audit --mode docker --container my-es
 
 ### Docker Mode (default)
 ```bash
-python audit.py --mode docker --container <name-or-id>
+python3 audit.py --mode docker --container <name-or-id>
 ```
 Runs `docker exec <container> curl ...` to query the Elasticsearch REST API from inside the container.
 
 ### Kubernetes Mode
 ```bash
-python audit.py --mode kubectl --pod <pod-name> [--namespace <ns>]
+python3 audit.py --mode kubectl --pod <pod-name> [--namespace <ns>]
 ```
 Runs `kubectl exec <pod> -n <namespace> -- curl ...` to query Elasticsearch.
 
 ### Direct Mode
 ```bash
-python audit.py --mode direct --host <host> --port <port> \
+python3 audit.py --mode direct --host <host> --port <port> \
   [--username <user>] [--password <pass>] [--scheme https]
 ```
 Queries Elasticsearch REST API directly from the audit host. Useful for cloud-managed deployments (AWS OpenSearch, Elastic Cloud).
@@ -187,14 +187,14 @@ The tool queries the NVD API v2 and CISA KEV catalog for CVEs affecting the dete
 
 ```bash
 # Run with CVE scanning (default)
-python audit.py --mode docker --container my-es
+python3 audit.py --mode docker --container my-es
 
 # Skip CVE scanning (faster)
-python audit.py --mode docker --container my-es --skip-cve
+python3 audit.py --mode docker --container my-es --skip-cve
 
 # Set NVD API key for higher rate limits
 export NVD_API_KEY=your-api-key
-python audit.py --mode docker --container my-es
+python3 audit.py --mode docker --container my-es
 ```
 
 See [docs/CVE_SCANNING.md](docs/CVE_SCANNING.md) for details.
@@ -207,7 +207,7 @@ See [docs/CVE_SCANNING.md](docs/CVE_SCANNING.md) for details.
 ```yaml
 - name: Elasticsearch Security Audit
   run: |
-    python audit.py --mode docker --container my-es \
+    python3 audit.py --mode docker --container my-es \
       --sarif es-audit.sarif \
       --fail-on high
 
@@ -223,10 +223,10 @@ See [docs/CVE_SCANNING.md](docs/CVE_SCANNING.md) for details.
 
 ```bash
 # Fail pipeline on CRITICAL findings
-python audit.py --mode docker --container my-es --fail-on critical
+python3 audit.py --mode docker --container my-es --fail-on critical
 
 # Fail pipeline on any HIGH or CRITICAL findings
-python audit.py --mode docker --container my-es --fail-on high
+python3 audit.py --mode docker --container my-es --fail-on high
 ```
 
 ---
